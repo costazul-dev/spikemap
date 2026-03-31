@@ -1,0 +1,27 @@
+# Environment
+venv/
+env/
+.venv-test/
+.env
+
+# Cache
+__pycache__/
+*.pyc
+.cache
+node_modules/
+dist/
+.vite/
+
+# IDE
+.vscode/
+.idea/
+
+# System
+.DS_Store
+
+# Project-specific
+PLAN.md
+context*
+output.txt
+logs/
+*.log
