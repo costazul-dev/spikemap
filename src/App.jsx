@@ -1,21 +1,13 @@
 import { useState, useCallback, useRef } from 'react'
-import { MapContainer, TileLayer, Polyline, useMapEvents, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import './App.css'
-import { fetchRailroad } from './overpass.js'
 
 const OSM_TILE = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 const ORM_TILE = 'https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png'
 
 const FENCE_COLOR = '#e84040'
 const PENDING_COLOR = '#f5a623'
-const RAILROAD_COLOR = '#4a90d9'
-
-// Captures the Leaflet map instance into a ref owned by the parent
-function MapRef({ mapRef }) {
-  mapRef.current = useMap()
-  return null
-}
 
 // Listens for map clicks and calls back with [lat, lng]
 function ClickHandler({ onMapClick }) {
@@ -49,11 +41,6 @@ export default function App() {
   const [crossings, setCrossings] = useState([])
   const [pendingPoint, setPendingPoint] = useState(null) // first click, waiting for second
   const fileInputRef = useRef(null)
-  const mapRef = useRef(null)
-  const [operator, setOperator] = useState('')
-  const [railroadFeatures, setRailroadFeatures] = useState([])
-  const [fetching, setFetching] = useState(false)
-  const [fetchError, setFetchError] = useState(null)
 
   const handleMapClick = useCallback((latLng) => {
     if (!pendingPoint) {
@@ -101,27 +88,6 @@ export default function App() {
     e.target.value = ''
   }, [])
 
-  const MIN_ZOOM_FOR_FETCH = 8
-
-  const handleFetchRailroad = useCallback(async () => {
-    if (!operator.trim() || !mapRef.current) return
-    const zoom = mapRef.current.getZoom()
-    if (zoom < MIN_ZOOM_FOR_FETCH) {
-      setFetchError(`Zoom in more before fetching (current zoom: ${zoom}, need ≥ ${MIN_ZOOM_FOR_FETCH})`)
-      return
-    }
-    setFetching(true)
-    setFetchError(null)
-    try {
-      const fc = await fetchRailroad(operator.trim(), mapRef.current.getBounds())
-      setRailroadFeatures(fc.features)
-    } catch (err) {
-      setFetchError(err.message)
-    } finally {
-      setFetching(false)
-    }
-  }, [operator])
-
   const drawingMode = pendingPoint !== null
 
   return (
@@ -137,17 +103,6 @@ export default function App() {
           ) : (
             <span className="hint">Click two points to draw a fence</span>
           )}
-          <input
-            className="operator-input"
-            type="text"
-            placeholder="Operator (e.g. Union Pacific)"
-            value={operator}
-            onChange={(e) => setOperator(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleFetchRailroad()}
-          />
-          <button className="btn" onClick={handleFetchRailroad} disabled={fetching || !operator.trim()}>
-            {fetching ? 'Fetching…' : 'Fetch Railroads'}
-          </button>
           <button className="btn" onClick={handleSave} disabled={crossings.length === 0}>
             Save JSON
           </button>
@@ -166,14 +121,6 @@ export default function App() {
 
       {crossings.length > 0 && (
         <div className="fence-count">{crossings.length} fence{crossings.length !== 1 ? 's' : ''}</div>
-      )}
-      {railroadFeatures.length > 0 && (
-        <div className="fence-count" style={{ background: RAILROAD_COLOR }}>
-          {railroadFeatures.length} railroad segment{railroadFeatures.length !== 1 ? 's' : ''}
-        </div>
-      )}
-      {fetchError && (
-        <div className="fetch-error">{fetchError}</div>
       )}
 
       <MapContainer
@@ -194,7 +141,6 @@ export default function App() {
           opacity={0.8}
         />
 
-        <MapRef mapRef={mapRef} />
         <ClickHandler onMapClick={handleMapClick} />
 
         {/* Committed fences */}
@@ -203,15 +149,6 @@ export default function App() {
             key={i}
             positions={toLeafletPositions(c.border_points)}
             pathOptions={{ color: FENCE_COLOR, weight: 3 }}
-          />
-        ))}
-
-        {/* Fetched railroad segments */}
-        {railroadFeatures.map((f, i) => (
-          <Polyline
-            key={i}
-            positions={f.geometry.coordinates.map(([lng, lat]) => [lat, lng])}
-            pathOptions={{ color: RAILROAD_COLOR, weight: 2, opacity: 0.8 }}
           />
         ))}
 

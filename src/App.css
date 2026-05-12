@@ -86,43 +86,6 @@
   pointer-events: none;
 }
 
-/* ── Operator input ── */
-.operator-input {
-  padding: 5px 10px;
-  font-size: 13px;
-  border: 1px solid #555;
-  border-radius: 5px;
-  background: #2a2a2a;
-  color: #fff;
-  width: 200px;
-  outline: none;
-}
-
-.operator-input::placeholder {
-  color: #777;
-}
-
-.operator-input:focus {
-  border-color: #4a90d9;
-}
-
-/* ── Fetch error banner ── */
-.fetch-error {
-  position: absolute;
-  top: 54px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #7a1a1a;
-  color: #ffaaaa;
-  font-size: 12px;
-  padding: 5px 14px;
-  border-radius: 4px;
-  z-index: 1000;
-  pointer-events: none;
-  max-width: 60%;
-  text-align: center;
-}
-
 /* ── Map ── */
 .map {
   flex: 1;
