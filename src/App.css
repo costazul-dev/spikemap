@@ -10,20 +10,25 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 44px;
+  height: 52px;
   padding: 0 14px;
-  background: #1a1a1a;
-  color: #fff;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--accent);
   flex-shrink: 0;
   gap: 12px;
   z-index: 1000;
 }
 
 .logo {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #e84040;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
   white-space: nowrap;
 }
 
@@ -34,27 +39,32 @@
 }
 
 .hint {
-  font-size: 12px;
-  color: #aaa;
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
   white-space: nowrap;
 }
 
 /* ── Buttons ── */
 .btn {
-  padding: 5px 12px;
-  font-size: 13px;
-  font-weight: 500;
-  border: none;
-  border-radius: 5px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  border-radius: 2px;
   cursor: pointer;
-  background: #e84040;
-  color: #fff;
-  transition: background 0.15s;
+  background: var(--bg-raised);
+  color: var(--text-primary);
+  transition: background 0.15s, border-color 0.15s;
   white-space: nowrap;
 }
 
 .btn:hover:not(:disabled) {
-  background: #c73333;
+  background: #303030;
+  border-color: var(--accent);
 }
 
 .btn:disabled {
@@ -62,26 +72,40 @@
   cursor: default;
 }
 
+.btn-primary {
+  background: var(--accent);
+  color: #0f0f0f;
+  border-color: var(--accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-dim);
+  border-color: var(--accent-dim);
+}
+
 .btn-ghost {
   background: transparent;
-  border: 1px solid #555;
-  color: #ccc;
+  border: 1px solid var(--danger);
+  color: var(--danger);
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: #2a2a2a;
+  background: rgba(192, 57, 43, 0.12);
 }
 
 /* ── Fence count badge ── */
 .fence-count {
   position: absolute;
-  top: 54px;
+  top: 62px;
   right: 14px;
-  background: rgba(26, 26, 26, 0.85);
-  color: #ccc;
-  font-size: 12px;
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   padding: 4px 10px;
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
   z-index: 1000;
   pointer-events: none;
 }
@@ -90,4 +114,8 @@
 .map {
   flex: 1;
   min-height: 0;
+}
+
+.map-drawing {
+  cursor: crosshair;
 }
