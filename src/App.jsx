@@ -3,13 +3,12 @@ import { MapContainer, TileLayer, Polyline, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import './App.css'
 
-const OSM_TILE = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+const CARTO_TILE = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
 const ORM_TILE = 'https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png'
 
-const FENCE_COLOR = '#e84040'
-const PENDING_COLOR = '#f5a623'
+const FENCE_COLOR = '#f0b429'
+const PENDING_COLOR = '#ffffff'
 
-// Listens for map clicks and calls back with [lat, lng]
 function ClickHandler({ onMapClick }) {
   useMapEvents({
     click(e) {
@@ -24,7 +23,7 @@ function newCrossing(pointA, pointB) {
     name: '',
     type: 'line_segment',
     border_points: [
-      [pointA[1], pointA[0]], // store as [lng, lat] per the JSON format
+      [pointA[1], pointA[0]],
       [pointB[1], pointB[0]],
     ],
     country_north: '',
@@ -32,14 +31,23 @@ function newCrossing(pointA, pointB) {
   }
 }
 
-// Convert stored [lng, lat] border_points to Leaflet [lat, lng] positions
 function toLeafletPositions(border_points) {
   return border_points.map(([lng, lat]) => [lat, lng])
 }
 
+function SpikeIcon() {
+  return (
+    <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">
+      <rect x="0" y="0" width="10" height="3" />
+      <rect x="3" y="3" width="4" height="9" />
+      <polygon points="3,12 7,12 5,16" />
+    </svg>
+  )
+}
+
 export default function App() {
   const [crossings, setCrossings] = useState([])
-  const [pendingPoint, setPendingPoint] = useState(null) // first click, waiting for second
+  const [pendingPoint, setPendingPoint] = useState(null)
   const fileInputRef = useRef(null)
 
   const handleMapClick = useCallback((latLng) => {
@@ -84,16 +92,19 @@ export default function App() {
       }
     }
     reader.readAsText(file)
-    // reset so the same file can be re-loaded
     e.target.value = ''
   }, [])
 
   const drawingMode = pendingPoint !== null
+  const fenceS = crossings.length !== 1 ? 'S' : ''
 
   return (
     <div className="app">
       <div className="toolbar">
-        <span className="logo">SpikeMap</span>
+        <span className="logo">
+          <SpikeIcon />
+          SpikeMap
+        </span>
         <div className="toolbar-actions">
           {drawingMode ? (
             <>
@@ -103,7 +114,7 @@ export default function App() {
           ) : (
             <span className="hint">Click two points to draw a fence</span>
           )}
-          <button className="btn" onClick={handleSave} disabled={crossings.length === 0}>
+          <button className="btn btn-primary" onClick={handleSave} disabled={crossings.length === 0}>
             Save JSON
           </button>
           <button className="btn" onClick={() => fileInputRef.current.click()}>
@@ -120,39 +131,37 @@ export default function App() {
       </div>
 
       {crossings.length > 0 && (
-        <div className="fence-count">{crossings.length} fence{crossings.length !== 1 ? 's' : ''}</div>
+        <div className="fence-count">{crossings.length} FENCE{fenceS} LOGGED</div>
       )}
 
       <MapContainer
         center={[47.5, -97]}
         zoom={5}
-        className="map"
+        className={`map${drawingMode ? ' map-drawing' : ''}`}
         zoomControl={true}
       >
         <TileLayer
-          url={OSM_TILE}
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url={CARTO_TILE}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
           maxZoom={19}
         />
         <TileLayer
           url={ORM_TILE}
           attribution='&copy; <a href="https://www.openrailwaymap.org/">OpenRailwayMap</a>'
           maxZoom={19}
-          opacity={0.8}
+          opacity={0.6}
         />
 
         <ClickHandler onMapClick={handleMapClick} />
 
-        {/* Committed fences */}
         {crossings.map((c, i) => (
           <Polyline
             key={i}
             positions={toLeafletPositions(c.border_points)}
-            pathOptions={{ color: FENCE_COLOR, weight: 3 }}
+            pathOptions={{ color: FENCE_COLOR, weight: 4 }}
           />
         ))}
 
-        {/* Pending first point — draw a tiny dot via a degenerate polyline */}
         {pendingPoint && (
           <Polyline
             positions={[pendingPoint, pendingPoint]}
