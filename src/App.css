@@ -119,3 +119,71 @@
 .map-drawing {
   cursor: crosshair;
 }
+
+/* ── Welcome modal ── */
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-card {
+  background: var(--bg-panel);
+  border: 2px solid var(--accent);
+  border-radius: 2px;
+  padding: 32px 36px;
+  max-width: 480px;
+  width: calc(100% - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.welcome-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+}
+
+.welcome-title svg {
+  width: 14px;
+  height: 22px;
+}
+
+.welcome-body {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.welcome-credit {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.welcome-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.welcome-link:hover {
+  text-decoration: underline;
+}
+
+.welcome-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
