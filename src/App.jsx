@@ -45,10 +45,36 @@ function SpikeIcon() {
   )
 }
 
+function WelcomeModal({ onDismiss }) {
+  return (
+    <div className="welcome-overlay">
+      <div className="welcome-card">
+        <h2 className="welcome-title"><SpikeIcon />SpikeMap</h2>
+        <p className="welcome-body">
+          SpikeMap is a tool for logging railroad grade crossing fences along the U.S.-Mexico and U.S.-Canada borders.
+          Click two points on the map to draw a fence segment. Save your work as JSON to pick up where you left off.
+        </p>
+        <p className="welcome-credit">
+          Built by Esteban — <a href="#" className="welcome-link">personal website</a>
+        </p>
+        <div className="welcome-actions">
+          <button className="btn btn-primary" onClick={onDismiss}>Dismiss</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [crossings, setCrossings] = useState([])
   const [pendingPoint, setPendingPoint] = useState(null)
+  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('spikemap_welcomed'))
   const fileInputRef = useRef(null)
+
+  const handleDismissWelcome = useCallback(() => {
+    localStorage.setItem('spikemap_welcomed', '1')
+    setShowWelcome(false)
+  }, [])
 
   const handleMapClick = useCallback((latLng) => {
     if (!pendingPoint) {
@@ -100,6 +126,7 @@ export default function App() {
 
   return (
     <div className="app">
+      {showWelcome && <WelcomeModal onDismiss={handleDismissWelcome} />}
       <div className="toolbar">
         <span className="logo">
           <SpikeIcon />
@@ -114,6 +141,9 @@ export default function App() {
           ) : (
             <span className="hint">Click two points to draw a fence</span>
           )}
+          <button className="btn" aria-label="About SpikeMap" onClick={() => setShowWelcome(true)}>
+            ⓘ
+          </button>
           <button className="btn btn-primary" onClick={handleSave} disabled={crossings.length === 0}>
             Save JSON
           </button>
