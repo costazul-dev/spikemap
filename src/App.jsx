@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { MapContainer, TileLayer, Polyline, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import './App.css'
@@ -69,7 +69,40 @@ export default function App() {
   const [crossings, setCrossings] = useState([])
   const [pendingPoint, setPendingPoint] = useState(null)
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('spikemap_welcomed'))
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('spikemap_undo_history')) ?? [] } catch { return [] }
+  })
   const fileInputRef = useRef(null)
+
+  const pushHistory = useCallback((snapshotCrossings, snapshotPending) => {
+    setHistory((prev) => {
+      const next = [{ crossings: snapshotCrossings, pendingPoint: snapshotPending }, ...prev].slice(0, 100)
+      localStorage.setItem('spikemap_undo_history', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const handleUndo = useCallback(() => {
+    setHistory((prev) => {
+      if (prev.length === 0) return prev
+      const [snapshot, ...rest] = prev
+      setCrossings(snapshot.crossings)
+      setPendingPoint(snapshot.pendingPoint)
+      localStorage.setItem('spikemap_undo_history', JSON.stringify(rest))
+      return rest
+    })
+  }, [])
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        e.preventDefault()
+        handleUndo()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [handleUndo])
 
   const handleDismissWelcome = useCallback(() => {
     localStorage.setItem('spikemap_welcomed', '1')
@@ -78,12 +111,14 @@ export default function App() {
 
   const handleMapClick = useCallback((latLng) => {
     if (!pendingPoint) {
+      pushHistory(crossings, null)
       setPendingPoint(latLng)
     } else {
+      pushHistory(crossings, pendingPoint)
       setCrossings((prev) => [...prev, newCrossing(pendingPoint, latLng)])
       setPendingPoint(null)
     }
-  }, [pendingPoint])
+  }, [pendingPoint, crossings, pushHistory])
 
   const handleCancel = useCallback(() => {
     setPendingPoint(null)
@@ -108,6 +143,8 @@ export default function App() {
       try {
         const data = JSON.parse(ev.target.result)
         if (Array.isArray(data.crossings)) {
+          setHistory([])
+          localStorage.removeItem('spikemap_undo_history')
           setCrossings(data.crossings)
           setPendingPoint(null)
         } else {
@@ -141,6 +178,7 @@ export default function App() {
           ) : (
             <span className="hint">Click two points to draw a fence</span>
           )}
+          <button className="btn" onClick={handleUndo} disabled={history.length === 0}>Undo</button>
           <button className="btn" aria-label="About SpikeMap" onClick={() => setShowWelcome(true)}>
             ⓘ
           </button>
