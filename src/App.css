@@ -119,3 +119,231 @@
 .map-drawing {
   cursor: crosshair;
 }
+
+/* ── Welcome modal ── */
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-card {
+  background: var(--bg-panel);
+  border: 2px solid var(--accent);
+  border-radius: 2px;
+  padding: 32px 36px;
+  max-width: 480px;
+  width: calc(100% - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.welcome-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+}
+
+.welcome-title svg {
+  width: 14px;
+  height: 22px;
+}
+
+.welcome-body {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.welcome-credit {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.welcome-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.welcome-link:hover {
+  text-decoration: underline;
+}
+
+.welcome-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+/* ── Fence panel ── */
+.fence-panel {
+  position: absolute;
+  bottom: 20px;
+  left: 14px;
+  z-index: 1000;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 180px;
+}
+
+.fence-panel-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-family: inherit;
+}
+
+.fence-name-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 4px 0;
+  outline: none;
+  width: 100%;
+}
+
+.fence-name-input:focus {
+  border-bottom-color: var(--accent);
+}
+
+.fence-name-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.fence-country-row {
+  display: flex;
+  gap: 8px;
+}
+
+.fence-country-select {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 4px 0;
+  outline: none;
+  cursor: pointer;
+}
+
+.fence-country-select:focus {
+  border-bottom-color: var(--accent);
+}
+
+/* ── Label prompt modal ── */
+.label-prompt-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.label-prompt-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 280px;
+  max-width: 360px;
+}
+
+.label-prompt-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.label-prompt-body {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.label-prompt-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* ── Labeling wizard ── */
+.labeling-wizard {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: var(--bg-panel);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 240px;
+}
+
+.wizard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wizard-progress {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.wizard-exit-btn {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.wizard-next-btn {
+  width: 100%;
+}
+
+/* ── Endpoint drag markers ── */
+.endpoint-marker {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #d97c14;
+  border: 2px solid #0f0f0f;
+}

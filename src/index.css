@@ -8,8 +8,8 @@
   --accent: #d97c14;
   --accent-dim: #a35c0a;
   --danger: #c0392b;
-  --fence: #f0b429;
-  --fence-pending: #ffffff;
+  --fence: #8a8278;
+  --fence-pending: #8a8278;
 }
 
 *, *::before, *::after {
