@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect, Fragment } from 'react'
-import { MapContainer, TileLayer, Polyline, Marker, useMapEvents } from 'react-leaflet'
+import { useState, useCallback, useRef, useEffect, useMemo, Fragment } from 'react'
+import { MapContainer, TileLayer, Polyline, Marker, useMapEvents, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import './App.css'
@@ -63,6 +63,14 @@ function SpikeIcon() {
       <polygon points="3,12 7,12 5,16" />
     </svg>
   )
+}
+
+function MapController({ bounds }) {
+  const map = useMap()
+  useEffect(() => {
+    if (bounds) map.fitBounds(bounds, { padding: [100, 80] })
+  }, [bounds])
+  return null
 }
 
 function FenceLayer({ crossings, setCrossings, selectedIndex, setSelectedIndex, pendingPoint, setPendingPoint, pushHistory, fenceClickedRef }) {
@@ -129,6 +137,14 @@ function FencePanel({ crossings, setCrossings, selectedIndex, setSelectedIndex, 
     })
   }
 
+  function handleCountryChange(field, value) {
+    setCrossings(prev => {
+      const next = [...prev]
+      next[selectedIndex] = { ...next[selectedIndex], [field]: value }
+      return next
+    })
+  }
+
   function handleDelete() {
     pushHistory(crossings, null)
     setCrossings(prev => prev.filter((_, i) => i !== selectedIndex))
@@ -151,7 +167,108 @@ function FencePanel({ crossings, setCrossings, selectedIndex, setSelectedIndex, 
           }
         }}
       />
+      <div className="fence-country-row">
+        <select
+          className="fence-country-select"
+          value={crossing.country_north}
+          onChange={e => handleCountryChange('country_north', e.target.value)}
+        >
+          <option value="">North…</option>
+          <option value="USA">USA</option>
+          <option value="CAN">CAN</option>
+          <option value="MEX">MEX</option>
+        </select>
+        <select
+          className="fence-country-select"
+          value={crossing.country_south}
+          onChange={e => handleCountryChange('country_south', e.target.value)}
+        >
+          <option value="">South…</option>
+          <option value="USA">USA</option>
+          <option value="CAN">CAN</option>
+          <option value="MEX">MEX</option>
+        </select>
+      </div>
       <button className="btn btn-ghost" onClick={handleDelete}>Delete</button>
+    </div>
+  )
+}
+
+function LabelPromptModal({ count, onLabel, onSaveAnyway }) {
+  return (
+    <div className="label-prompt-overlay">
+      <div className="label-prompt-card">
+        <div className="label-prompt-title">Label before saving?</div>
+        <p className="label-prompt-body">
+          {count} fence{count !== 1 ? 's are' : ' is'} missing a name or country.
+        </p>
+        <div className="label-prompt-actions">
+          <button className="btn btn-ghost" onClick={onSaveAnyway}>Save anyway</button>
+          <button className="btn btn-primary" onClick={onLabel}>Label now</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LabelingWizard({ crossings, setCrossings, wizardIndex, onNext, onExit }) {
+  const crossing = crossings[wizardIndex]
+  const total = crossings.length
+  const isLast = wizardIndex === total - 1
+  const [name, setName] = useState(crossing.name)
+
+  function handleCountryChange(field, value) {
+    setCrossings(prev => {
+      const next = [...prev]
+      next[wizardIndex] = { ...next[wizardIndex], [field]: value }
+      return next
+    })
+  }
+
+  function handleNext() {
+    onNext(name)
+  }
+
+  return (
+    <div className="labeling-wizard">
+      <div className="wizard-header">
+        <span className="wizard-progress">FENCE {wizardIndex + 1} / {total}</span>
+        <button className="btn btn-ghost wizard-exit-btn" onClick={onExit}>✕</button>
+      </div>
+      <input
+        className="fence-name-input"
+        type="text"
+        value={name}
+        placeholder="Name…"
+        autoFocus
+        onChange={e => setName(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') handleNext() }}
+      />
+      <div className="fence-country-row">
+        <select
+          className="fence-country-select"
+          value={crossing.country_north}
+          onChange={e => handleCountryChange('country_north', e.target.value)}
+        >
+          <option value="">North…</option>
+          <option value="USA">USA</option>
+          <option value="CAN">CAN</option>
+          <option value="MEX">MEX</option>
+        </select>
+        <select
+          className="fence-country-select"
+          value={crossing.country_south}
+          onChange={e => handleCountryChange('country_south', e.target.value)}
+        >
+          <option value="">South…</option>
+          <option value="USA">USA</option>
+          <option value="CAN">CAN</option>
+          <option value="MEX">MEX</option>
+        </select>
+      </div>
+      <button className="btn btn-primary wizard-next-btn" onClick={handleNext}>
+        {isLast ? 'Save ✓' : 'Next →'}
+      </button>
     </div>
   )
 }
@@ -181,6 +298,9 @@ export default function App() {
   const [pendingPoint, setPendingPoint] = useState(null)
   const [selectedIndex, setSelectedIndex] = useState(null)
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('spikemap_welcomed'))
+  const [labelPrompt, setLabelPrompt] = useState(false)
+  const [wizardIndex, setWizardIndex] = useState(null)
+  const [savePending, setSavePending] = useState(false)
   const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem('spikemap_undo_history')) ?? [] } catch { return [] }
   })
@@ -237,7 +357,7 @@ export default function App() {
     setPendingPoint(null)
   }, [])
 
-  const handleSave = useCallback(() => {
+  const doSave = useCallback(() => {
     const payload = JSON.stringify({ crossings }, null, 2)
     const blob = new Blob([payload], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -247,6 +367,57 @@ export default function App() {
     a.click()
     URL.revokeObjectURL(url)
   }, [crossings])
+
+  useEffect(() => {
+    if (savePending) {
+      setSavePending(false)
+      doSave()
+    }
+  }, [savePending, doSave])
+
+  const handleSave = useCallback(() => {
+    const unlabeled = crossings.filter(c => !c.name || !c.country_north || !c.country_south)
+    if (unlabeled.length > 0) {
+      setLabelPrompt(true)
+    } else {
+      doSave()
+    }
+  }, [crossings, doSave])
+
+  const handleLabelNow = useCallback(() => {
+    setLabelPrompt(false)
+    setWizardIndex(0)
+    setSelectedIndex(0)
+  }, [])
+
+  const handleWizardNext = useCallback((pendingName) => {
+    setCrossings(prev => {
+      const next = [...prev]
+      next[wizardIndex] = { ...next[wizardIndex], name: pendingName }
+      return next
+    })
+    if (wizardIndex < crossings.length - 1) {
+      const next = wizardIndex + 1
+      setWizardIndex(next)
+      setSelectedIndex(next)
+    } else {
+      setWizardIndex(null)
+      setSelectedIndex(null)
+      setSavePending(true)
+    }
+  }, [wizardIndex, crossings.length])
+
+  const handleWizardExit = useCallback(() => {
+    setWizardIndex(null)
+    setSelectedIndex(null)
+  }, [])
+
+  const wizardBounds = useMemo(() => {
+    if (wizardIndex === null) return null
+    const pts = crossings[wizardIndex]?.border_points
+    if (!pts || pts.length < 2) return null
+    return pts.map(([lng, lat]) => [lat, lng])
+  }, [wizardIndex, crossings])
 
   const handleLoad = useCallback((e) => {
     const file = e.target.files[0]
@@ -277,6 +448,13 @@ export default function App() {
   return (
     <div className="app">
       {showWelcome && <WelcomeModal onDismiss={handleDismissWelcome} />}
+      {labelPrompt && (
+        <LabelPromptModal
+          count={crossings.filter(c => !c.name || !c.country_north || !c.country_south).length}
+          onLabel={handleLabelNow}
+          onSaveAnyway={() => { setLabelPrompt(false); doSave() }}
+        />
+      )}
       <div className="toolbar">
         <span className="logo">
           <SpikeIcon />
@@ -315,14 +493,25 @@ export default function App() {
         <div className="fence-count">{crossings.length} FENCE{fenceS} LOGGED</div>
       )}
 
-      <FencePanel
-        key={selectedIndex}
-        crossings={crossings}
-        setCrossings={setCrossings}
-        selectedIndex={selectedIndex}
-        setSelectedIndex={setSelectedIndex}
-        pushHistory={pushHistory}
-      />
+      {wizardIndex !== null ? (
+        <LabelingWizard
+          key={wizardIndex}
+          crossings={crossings}
+          setCrossings={setCrossings}
+          wizardIndex={wizardIndex}
+          onNext={handleWizardNext}
+          onExit={handleWizardExit}
+        />
+      ) : (
+        <FencePanel
+          key={selectedIndex}
+          crossings={crossings}
+          setCrossings={setCrossings}
+          selectedIndex={selectedIndex}
+          setSelectedIndex={setSelectedIndex}
+          pushHistory={pushHistory}
+        />
+      )}
 
       <MapContainer
         center={[47.5, -97]}
@@ -342,6 +531,7 @@ export default function App() {
           opacity={0.6}
         />
 
+        <MapController bounds={wizardBounds} />
         <ClickHandler
           onMapClick={handleMapClick}
           selectedIndex={selectedIndex}
