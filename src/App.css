@@ -187,3 +187,58 @@
   justify-content: flex-end;
   margin-top: 4px;
 }
+
+/* ── Fence panel ── */
+.fence-panel {
+  position: absolute;
+  bottom: 20px;
+  left: 14px;
+  z-index: 1000;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 180px;
+}
+
+.fence-panel-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-family: inherit;
+}
+
+.fence-name-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 4px 0;
+  outline: none;
+  width: 100%;
+}
+
+.fence-name-input:focus {
+  border-bottom-color: var(--accent);
+}
+
+.fence-name-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* ── Endpoint drag markers ── */
+.endpoint-marker {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #d97c14;
+  border: 2px solid #0f0f0f;
+}
