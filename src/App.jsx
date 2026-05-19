@@ -7,10 +7,10 @@ import './App.css'
 const CARTO_TILE = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
 const ORM_TILE = 'https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png'
 
-const FENCE_COLOR = '#f0b429'
-const FENCE_HOVER_COLOR = '#ffd166'
+const FENCE_COLOR = '#8a8278'
+const FENCE_HOVER_COLOR = '#b0a89e'
 const FENCE_SELECTED_COLOR = '#d97c14'
-const PENDING_COLOR = '#ffffff'
+const PENDING_COLOR = '#8a8278'
 
 function endpointIcon() {
   return L.divIcon({
@@ -77,7 +77,7 @@ function FenceLayer({ crossings, setCrossings, selectedIndex, setSelectedIndex, 
       <Fragment key={i}>
         <Polyline
           positions={toLeafletPositions(c.border_points)}
-          pathOptions={{ color, weight: i === hoveredIndex ? 6 : 4 }}
+          pathOptions={{ color, weight: i === hoveredIndex ? 7 : 5 }}
           eventHandlers={{
             mouseover() { setHoveredIndex(i) },
             mouseout() { setHoveredIndex(null) },
