@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { MapContainer, TileLayer, Polyline, useMapEvents } from 'react-leaflet'
+import { useState, useCallback, useRef, useEffect, Fragment } from 'react'
+import { MapContainer, TileLayer, Polyline, Marker, useMapEvents } from 'react-leaflet'
+import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import './App.css'
 
@@ -7,11 +8,30 @@ const CARTO_TILE = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x
 const ORM_TILE = 'https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png'
 
 const FENCE_COLOR = '#f0b429'
+const FENCE_HOVER_COLOR = '#ffd166'
+const FENCE_SELECTED_COLOR = '#d97c14'
 const PENDING_COLOR = '#ffffff'
 
-function ClickHandler({ onMapClick }) {
+function endpointIcon() {
+  return L.divIcon({
+    className: '',
+    html: '<div class="endpoint-marker"></div>',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  })
+}
+
+function ClickHandler({ onMapClick, selectedIndex, setSelectedIndex, fenceClickedRef }) {
   useMapEvents({
     click(e) {
+      if (fenceClickedRef.current) {
+        fenceClickedRef.current = false
+        return
+      }
+      if (selectedIndex !== null) {
+        setSelectedIndex(null)
+        return
+      }
       onMapClick([e.latlng.lat, e.latlng.lng])
     },
   })
@@ -45,6 +65,97 @@ function SpikeIcon() {
   )
 }
 
+function FenceLayer({ crossings, setCrossings, selectedIndex, setSelectedIndex, pendingPoint, setPendingPoint, pushHistory, fenceClickedRef }) {
+  const [hoveredIndex, setHoveredIndex] = useState(null)
+
+  return crossings.map((c, i) => {
+    let color = FENCE_COLOR
+    if (i === selectedIndex) color = FENCE_SELECTED_COLOR
+    else if (i === hoveredIndex) color = FENCE_HOVER_COLOR
+
+    return (
+      <Fragment key={i}>
+        <Polyline
+          positions={toLeafletPositions(c.border_points)}
+          pathOptions={{ color, weight: i === hoveredIndex ? 6 : 4 }}
+          eventHandlers={{
+            mouseover() { setHoveredIndex(i) },
+            mouseout() { setHoveredIndex(null) },
+            click(e) {
+              fenceClickedRef.current = true
+              if (pendingPoint !== null) setPendingPoint(null)
+              setSelectedIndex(i)
+            },
+          }}
+        />
+        {i === selectedIndex && c.border_points.map((pt, ptIdx) => (
+          <Marker
+            key={ptIdx}
+            position={[pt[1], pt[0]]}
+            draggable
+            icon={endpointIcon()}
+            eventHandlers={{
+              dragstart() {
+                pushHistory(crossings, null)
+              },
+              dragend(e) {
+                const { lat, lng } = e.target.getLatLng()
+                setCrossings(prev => {
+                  const next = [...prev]
+                  const updated = { ...next[i], border_points: [...next[i].border_points] }
+                  updated.border_points[ptIdx] = [lng, lat]
+                  next[i] = updated
+                  return next
+                })
+              },
+            }}
+          />
+        ))}
+      </Fragment>
+    )
+  })
+}
+
+function FencePanel({ crossings, setCrossings, selectedIndex, setSelectedIndex, pushHistory }) {
+  if (selectedIndex === null) return null
+
+  const crossing = crossings[selectedIndex]
+
+  function handleNameChange(value) {
+    setCrossings(prev => {
+      const next = [...prev]
+      next[selectedIndex] = { ...next[selectedIndex], name: value }
+      return next
+    })
+  }
+
+  function handleDelete() {
+    pushHistory(crossings, null)
+    setCrossings(prev => prev.filter((_, i) => i !== selectedIndex))
+    setSelectedIndex(null)
+  }
+
+  return (
+    <div className="fence-panel">
+      <div className="fence-panel-title">FENCE {selectedIndex + 1}</div>
+      <input
+        className="fence-name-input"
+        type="text"
+        defaultValue={crossing.name}
+        placeholder="Name…"
+        onBlur={e => handleNameChange(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            handleNameChange(e.target.value)
+            e.target.blur()
+          }
+        }}
+      />
+      <button className="btn btn-ghost" onClick={handleDelete}>Delete</button>
+    </div>
+  )
+}
+
 function WelcomeModal({ onDismiss }) {
   return (
     <div className="welcome-overlay">
@@ -68,11 +179,13 @@ function WelcomeModal({ onDismiss }) {
 export default function App() {
   const [crossings, setCrossings] = useState([])
   const [pendingPoint, setPendingPoint] = useState(null)
+  const [selectedIndex, setSelectedIndex] = useState(null)
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('spikemap_welcomed'))
   const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem('spikemap_undo_history')) ?? [] } catch { return [] }
   })
   const fileInputRef = useRef(null)
+  const fenceClickedRef = useRef(false)
 
   const pushHistory = useCallback((snapshotCrossings, snapshotPending) => {
     setHistory((prev) => {
@@ -202,6 +315,15 @@ export default function App() {
         <div className="fence-count">{crossings.length} FENCE{fenceS} LOGGED</div>
       )}
 
+      <FencePanel
+        key={selectedIndex}
+        crossings={crossings}
+        setCrossings={setCrossings}
+        selectedIndex={selectedIndex}
+        setSelectedIndex={setSelectedIndex}
+        pushHistory={pushHistory}
+      />
+
       <MapContainer
         center={[47.5, -97]}
         zoom={5}
@@ -220,15 +342,23 @@ export default function App() {
           opacity={0.6}
         />
 
-        <ClickHandler onMapClick={handleMapClick} />
+        <ClickHandler
+          onMapClick={handleMapClick}
+          selectedIndex={selectedIndex}
+          setSelectedIndex={setSelectedIndex}
+          fenceClickedRef={fenceClickedRef}
+        />
 
-        {crossings.map((c, i) => (
-          <Polyline
-            key={i}
-            positions={toLeafletPositions(c.border_points)}
-            pathOptions={{ color: FENCE_COLOR, weight: 4 }}
-          />
-        ))}
+        <FenceLayer
+          crossings={crossings}
+          setCrossings={setCrossings}
+          selectedIndex={selectedIndex}
+          setSelectedIndex={setSelectedIndex}
+          pendingPoint={pendingPoint}
+          setPendingPoint={setPendingPoint}
+          pushHistory={pushHistory}
+          fenceClickedRef={fenceClickedRef}
+        />
 
         {pendingPoint && (
           <Polyline
